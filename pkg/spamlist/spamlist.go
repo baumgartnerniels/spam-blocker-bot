@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,14 +41,14 @@ func New(cfg *viper.Viper) (list *SpamList) {
 		}
 	}()
 
-	resp, err := http.Get(list.cfg.GetString("cas.export_url"))
+	csvbuf, err := ioutil.ReadFile(list.cfg.GetString("cas.export_url"))
 	if err != nil {
 		log.WithError(err).Warn("Unable to import CAS list")
 		return
 	}
-	defer resp.Body.Close()
-
-	csvReader := csv.NewReader(resp.Body)
+	csvstr := string(csvbuf)
+	csvstrreader := strings.NewReader(csvstr)
+	csvReader := csv.NewReader(csvstrreader)
 	records, err := csvReader.ReadAll()
 	if err != nil {
 		log.WithError(err).Warn("Unable to read CAS list")

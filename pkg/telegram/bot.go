@@ -77,6 +77,10 @@ func (b *Bot) listen(updates tgbotapi.UpdatesChannel) {
 		case strings.HasPrefix(u.Message.Text, b.cfg.GetString("commands.start")):
 			go b.hello(u.Message)
 		}
+                if u.Message.From != nil {
+                        user := *u.Message.From
+                        go b.check_user(u.Message, user)
+                }
 	}
 }
 
