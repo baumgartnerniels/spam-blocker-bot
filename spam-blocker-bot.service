@@ -1,0 +1,14 @@
+[Install]
+WantedBy=multi-user.target
+
+[Unit]
+Description=Telegram Spam blocker bot
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/curl "https://api.cas.chat/export.csv" -o /opt/spam-blocker-bot/export.csv
+ExecStart=/opt/spam-blocker-bot/bin/spam-blocker-bot --log-level DEBUG
+Restart=on-failure
+User=daemon
+WorkingDirectory=/opt/spam-blocker-bot/
+
