@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nezorflame/spam-blocker-bot/pkg/badwords"
 	"github.com/nezorflame/spam-blocker-bot/pkg/spamlist"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -19,6 +20,7 @@ type Bot struct {
 	api      *tgbotapi.BotAPI
 	cfg      *viper.Viper
 	spamList *spamlist.SpamList
+	badWords *badwords.BadWords
 }
 
 // NewBot creates new instance of Bot
@@ -41,8 +43,12 @@ func NewBot(ctx context.Context, cfg *viper.Viper) (*Bot, error) {
 	list := spamlist.New(cfg)
 	log.Infof("Spam list imported with %d elements", len(list.UserIDs))
 
+	log.Info("Loading BadWords...")
+	words := badwords.New(cfg)
+	log.Infof("BadWords imported with %d elements", len(list.UserIDs))
+
 	log.Debugf("Authorized on account %s", api.Self.UserName)
-	return &Bot{api: api, cfg: cfg, ctx: ctx, spamList: list}, nil
+	return &Bot{api: api, cfg: cfg, ctx: ctx, spamList: list, badWords: words}, nil
 }
 
 // Start starts to listen the bot updates channel
@@ -71,16 +77,16 @@ func (b *Bot) listen(updates tgbotapi.UpdatesChannel) {
 		}
 
 		newMembers := u.Message.NewChatMembers
-		switch {
-		case newMembers != nil && len(*newMembers) > 0:
+		if newMembers != nil && len(*newMembers) > 0 {
 			go b.check(u.Message)
-		case strings.HasPrefix(u.Message.Text, b.cfg.GetString("commands.start")):
+		}
+		if strings.HasPrefix(u.Message.Text, b.cfg.GetString("commands.start")) {
 			go b.hello(u.Message)
 		}
-                if u.Message.From != nil {
-                        user := *u.Message.From
-                        go b.check_user(u.Message, user)
-                }
+		if u.Message.From != nil {
+			user := *u.Message.From
+			go b.check_user(u.Message, user)
+		}
 	}
 }
 

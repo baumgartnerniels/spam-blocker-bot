@@ -1,6 +1,8 @@
 package telegram
 
 import (
+	"strings"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -10,6 +12,14 @@ func (b *Bot) check_user(msg *tgbotapi.Message, u tgbotapi.User) {
 	logger := log.WithField("chat_id", msg.Chat.ID)
 	logger.Debugf("Checking User %d", u.ID)
 	check, ok := b.spamList.CheckUser(u.ID)
+	if !check {
+		//Static Rules
+		for _, s := range b.badWords.BadWords {
+			if strings.Contains(msg.Text, s) {
+				check = true
+			}
+		}
+	}
 	if check {
 		logger = logger.WithField("user_id", u.ID).WithField("user_name", u.UserName)
 		logger.Info("Banning user")
